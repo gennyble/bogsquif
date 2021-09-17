@@ -1,6 +1,6 @@
 mod physics;
 
-use std::{borrow::Borrow, fs::File, io::Write, time::Duration};
+use std::{borrow::Borrow, fs::File, io::Write, time::Duration, vec};
 
 use gifed::{
 	block::{
@@ -19,7 +19,7 @@ use physics::{
 use crate::physics::Tick;
 
 fn main() {
-	let mut sim = construct_simulation();
+	let mut sim = construct_kktest();
 	let width = sim.world_bounds.x as u16;
 	let height = sim.world_bounds.y as u16;
 
@@ -91,6 +91,28 @@ fn main() {
 		.unwrap()
 		.write_all(&gif.build().to_vec())
 		.unwrap();
+}
+
+fn construct_kktest() -> Simulation {
+	let bounds = Vec2::new(512.0, 256.0);
+	let size = Vec2::new(32.0, 32.0);
+	let center = (bounds * 0.5) + (size * 0.5);
+	let offset = Vec2::new(128.0, 0.0);
+	let velocity = Vec2::new(50.0, 0.0);
+
+	let mut square = Kinetic::with_velocity(center - offset, size, velocity * 0.5);
+	*square.mass_mut() = 10.0;
+
+	let mut square2 = Kinetic::with_velocity(center - offset * 2.0, size, velocity * 3.0);
+	*square2.mass_mut() = 10.0;
+
+	let mut sim = Simulation::new(bounds);
+	sim.gravity = Vec2::new(0.0, 0.0);
+
+	sim.add_object(square);
+	sim.add_object(square2);
+
+	sim
 }
 
 fn construct_simulation() -> Simulation {

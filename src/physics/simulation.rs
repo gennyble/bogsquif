@@ -110,50 +110,8 @@ impl Simulation {
 
 		let restitution = kin_b.restitution().min(kin_a.restitution());
 		let friction = kin_b.friction().max(kin_a.friction());
-		let combined_mass = kin_b.mass + kin_a.mass;
-		let b_ratio = kin_a.mass / combined_mass;
-		let a_ratio = kin_b.mass / combined_mass;
 
-		// Vert or horizontal?
-		if top > left && top > right || bottom > left && bottom > right {
-			let force = (kin_b.velocity.y - kin_a.velocity.y) * restitution;
-
-			// Top or bottom?
-			if top > bottom {
-				// Top
-				kin_b.velocity.y = -force * b_ratio;
-				kin_a.velocity.y = force * a_ratio;
-
-				kin_b.position.y -= -top * b_ratio;
-				kin_a.position.y += -top * a_ratio;
-			} else {
-				// Bottom
-				kin_b.velocity.y = force * b_ratio;
-				kin_a.velocity.y = -force * a_ratio;
-
-				kin_b.position.y += -bottom * b_ratio;
-				kin_a.position.y -= -bottom * a_ratio;
-			}
-		} else {
-			let force = (kin_b.velocity.x - kin_a.velocity.x) * restitution;
-
-			// Left or right?
-			if right > left {
-				// Right
-				kin_b.velocity.x = force * b_ratio;
-				kin_a.velocity.x = -force * a_ratio;
-
-				kin_b.position.x += -right * b_ratio;
-				kin_a.position.x -= -right * a_ratio;
-			} else {
-				// Left
-				kin_b.velocity.x = -force * b_ratio;
-				kin_a.velocity.x = force * a_ratio;
-
-				kin_b.position.x -= -left * b_ratio;
-				kin_a.position.x += -left * a_ratio;
-			}
-		}
+		//TODO: Kinetic-Kinetic
 	}
 }
 

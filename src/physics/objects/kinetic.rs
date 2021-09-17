@@ -44,6 +44,19 @@ impl Kinetic {
 	pub fn mass_mut(&mut self) -> &mut f32 {
 		&mut self.mass
 	}
+
+	pub fn smallen_velocity(&mut self, v: Vec2) {
+		if self.velocity.x > 0.0 {
+			self.velocity.x -= v.x;
+		} else {
+			self.velocity.x += v.x;
+		}
+		if self.velocity.y > 0.0 {
+			self.velocity.y -= v.y;
+		} else {
+			self.velocity.y += v.y;
+		}
+	}
 }
 
 impl Tick for Kinetic {
