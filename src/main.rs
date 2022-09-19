@@ -4,7 +4,7 @@ use std::{borrow::Borrow, fs::File, io::Write, time::Duration};
 
 use gifed::{
 	block::{
-		extension::{DisposalMethod, Extension, GraphicControl},
+		extension::{DisposalMethod, GraphicControl},
 		ColorTable, Version,
 	},
 	writer::{GifBuilder, ImageBuilder},
@@ -40,11 +40,10 @@ fn main() {
 	make_fade(&mut ctable, Color::new(0x44, 0x88, 0xDD), 64); // Turquise
 	ctable.push(Color::new(127, 127, 127));
 
-	let mut gif = GifBuilder::new(Version::Gif89a, width, height)
-		.global_color_table(ctable)
-		.background_color_index(0);
+	let mut gif = GifBuilder::new(width, height).palette(ctable);
+	//.background_index(0);
 
-	gif = gif.image(make_frame(&sim, &[63, 127, 191]));
+	gif = gif.image(make_frame(&sim, &[63, 127, 191], 0));
 
 	//let init_pos = sim.kinetic[0].position;
 	//println!("Init: {}", init_pos);
@@ -66,15 +65,7 @@ fn main() {
 		let cindicies = &[fade_index, fade_index + 64, fade_index + 64 * 2];
 
 		sim.tick(Duration::from_secs_f32(step_size));
-		gif = gif
-			.extension(Extension::GraphicControl(GraphicControl::new(
-				DisposalMethod::Clear,
-				false,
-				false,
-				(step_size * 100.0) as u16,
-				0,
-			)))
-			.image(make_frame(&sim, cindicies));
+		gif = gif.image(make_frame(&sim, cindicies, (step_size * 100.0) as u16));
 
 		/*if sim.kinetic[0].position == init_pos {
 			println!(
@@ -87,10 +78,7 @@ fn main() {
 		}*/
 	}
 
-	File::create("simulation.gif")
-		.unwrap()
-		.write_all(&gif.build().to_vec())
-		.unwrap();
+	gif.build().unwrap().save("simulation.gif").unwrap()
 }
 
 fn construct_simulation() -> Simulation {
@@ -110,23 +98,32 @@ fn construct_simulation() -> Simulation {
 	*square3.restitution_mut() = 0.25;
 	*square3.mass_mut() = 5.0;
 
+	let mut square4 = Kinetic::with_velocity((200.0, 0.0), size, (0.0, 0.0));
+	*square4.restitution_mut() = 0.8;
+	*square4.mass_mut() = 5.0;
+
 	let mut sim = Simulation::new(bounds);
 
 	sim.add_object(square);
 	sim.add_object(square2);
 	sim.add_object(square3);
+	sim.add_object(square4);
 	sim.add_object(Fixed::new((128.0, 192.0), (128.0, 24.0)));
 	sim.add_object(Fixed::new((32.0, 192.0), (32.0, 64.0)));
 
 	sim
 }
 
-fn make_frame(sim: &Simulation, cindicies: &[u8]) -> ImageBuilder {
+fn make_frame(sim: &Simulation, cindicies: &[u8], delay: u16) -> ImageBuilder {
 	let width = sim.world_bounds.x as u16;
 	let height = sim.world_bounds.y as u16;
 
 	let mut image = vec![0; width as usize * height as usize];
-	let ibuild = ImageBuilder::new(width, height);
+	let mut ibuild = ImageBuilder::new(width, height);
+
+	if delay > 0 {
+		ibuild = ibuild.delay(delay);
+	}
 
 	for fixed in &sim.fixed {
 		let posx = fixed.position.x.round() as usize;
@@ -153,10 +150,10 @@ fn make_frame(sim: &Simulation, cindicies: &[u8]) -> ImageBuilder {
 					continue;
 				}
 
-				image[index] = cindicies[kindex];
+				image[index] = cindicies[kindex % cindicies.len()];
 			}
 		}
 	}
 
-	ibuild.indicies(image)
+	ibuild.indicies(&image)
 }
